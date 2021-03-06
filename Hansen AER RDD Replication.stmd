@@ -1,0 +1,57 @@
+<p>Author: Max Walton 1. <a href="https://github.com/mwalton16/RDD">https://github.com/mwalton16/RDD</a> 2. Summary Hansen seeks to test the effectiveness of punishments for drunk driving based on DUI and aggravated DUI thresholds. Because these charges both come with a BAC threshold and mandatory minimum sentences, the causal effects are estimated with regression discontinuity. The running variable is BAC, and the cutoffs are 0.08 for DUIs and 0.15 for aggravated DUIs. Hansen uses DUI data from the state of Washington from 1999 to 2007. The data is used to determine if people who receive a DUI or aggravated DUI are less likely to receive another during the 8-year period. Hansen first checks to ensure that his covariates (gender, age, accident, prior, PBT) are balanced. The covariates are very statistically significant at 0, meaning they are balanced. Hansen runs regression discontinuity tests at cutoffs of 0.08 and 0.15 BACs, with his dependent variable, recidivism, individually regressed onto his different variables individually. He runs these regressions twice, with different BAC cutoffs. Finally, Hansen tests if DUIs cause recidivism to lower. He finds that the likelihood of receiving a DUI in the 8-year time period decreases by up to 10 percent for people that received a prior DUI in that time. Because covariates were balanced and controlled for, the 10 percent decrease is determined to be the causal effect of the DUI sentence.</p>
+<pre><code>use &quot;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Data\hansen_dwi.dta&quot;, clear
+ssc install estout
+ssc install markstat
+ssc install whereis
+ssc install rddensity
+ssc install lpdensity
+whereis pandoc &quot;c:\program files\pandoc\pandoc.exe&quot;//Author: Max Walton //
+use &quot;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Data\hansen_dwi.dta&quot;, clear
+ssc install estout
+</code></pre>
+<ol>
+<li>
+<p>Create DUI dummy variable.</p>
+<p>gen DUI = 0 replace DUI = 1 if bac1&gt;=0.08</p>
+</li>
+<li>
+<p>Smoothness of running variable.</p>
+<p>rddensity bac1, c(0.08) plot</p>
+</li>
+</ol>
+<p>The confidence intervals of the running variable overlap at the cutoff of .08. Therefore, smoothness is not violated.</p>
+<ol>
+<li>
+<p>Covariate balance</p>
+<p>quietly eststo: reg male bac1 quietly eststo: reg white bac1 quietly eststo: reg aged bac1 quietly eststo: reg acc bac1 esttab using &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Tables\Table 2 Panel A.rtf&rdquo;, compress</p>
+</li>
+<li>
+<p>Recreating Figure 2, Panels A-D.</p>
+<p>cmogram acc bac1, cut(0.08) scatter title(Panel A. Accidents at Scene) lfitci legend lineat(.08)</p>
+<p>graph export &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel A - Accidents at Scene.jpg&rdquo;, as(jpg) name(&ldquo;_graph0&rdquo;) quality(100) (file D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel A - Accidents at Scene.jpg written in JPEG format)</p>
+<p>cmogram male bac1, cut(0.08) scatter title(Panel B. Male) lfitci legend lineat(.08)</p>
+<p>graph export &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel B - Male.jpg&rdquo;, as(jpg) name(&ldquo;_graph0&rdquo;) quality(100) (file D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel B - Male.jpg written in JPEG format)</p>
+<p>cmogram aged bac1, cut(0.08) scatter title(Panel C. Age) lfitci legend lineat(.08)</p>
+<p>graph export &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel C - Age.jpg&rdquo;, as(jpg) name(&ldquo;_graph0&rdquo;) quality(100)(file D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel C - Age.jpg written in JPEG format)</p>
+<p>cmogram white bac1, cut(0.08) scatter title(Panel D. White) lfitci legend lineat(.08)</p>
+<p>graph export &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel D - White.jpg&rdquo;, as(jpg) name(&ldquo;_graph0&rdquo;) quality(100) (file D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Figures\Figure 2 Panel D - White.jpg written in JPEG format)</p>
+</li>
+</ol>
+<p>Figure 2 Panels A-D demonstrate that the covariates are balanced, as there is no discontinuity in the covariates at the cutoff point.</p>
+<ol>
+<li>
+<p>Estimating Equation 1 We intend to estimate recidivism on bac through different measures. Firstly, recidivism is estimated simply on BAC and the treatment, DUI. The model for this estimation is: yi = beta-0 + beta-1<em>BACi + beta-2</em>DUI+ ui where yi is recidivism for observation i in N, and ui is the error term.</p>
+<p>eststo clear gen DUI_bac1 = DUI<em>bac1 gen bac1_2 = bac1^2 gen DUI_bac1_2 = DUI</em>bac1_2</p>
+<p>quietly reg recidivism DUI bac1 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust estimates store simple1 quietly reg recidivism DUI bac1 if bac1&gt;0.03 &amp; bac1&lt;0.13, robust estimates store simple2</p>
+<p>quietly reg recidivism DUI bac1 DUI<em>bac1 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust estimates store linear_interaction1 quietly reg recidivism DUI bac1 DUI</em>bac1 if bac1&gt;0.003 &amp; bac1&lt;0.13, robust estimates store linear_interaction2</p>
+<p>quietly reg recidivism DUI bac1 DUI<em>bac1 bac1_2 DUI_bac1_2 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust estimates store quadratic_interaction1 quietly reg recidivism DUI bac1 DUI</em>bac1 bac1_2 DUI_bac1_2 if bac1&gt;0.03 &amp; bac1&lt;0.13, robust estimates store quadratic_interaction2 estimates table simple1 simple2 linear_interaction1 linear_interaction2 quadratic_interaction1 quadratic_interaction2</p>
+<p>quietly eststo: reg recidivism DUI bac1 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust quietly eststo: reg recidivism DUI bac1 if bac1&gt;0.03 &amp; bac1&lt;0.13, robust quietly eststo: reg recidivism DUI bac1 DUI<em>bac1 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust quietly eststo: reg recidivism DUI bac1 DUI</em>bac1 if bac1&gt;0.003 &amp; bac1&lt;0.13, robust quietly eststo: reg recidivism DUI bac1 DUI<em>bac1 bac1_2 DUI_bac1_2 if bac1&gt;0.055 &amp; bac1&lt;0.105, robust quietly eststo: reg recidivism DUI bac1 DUI</em>bac1 bac1_2 DUI_bac1_2 if bac1&gt;0.03 &amp; bac1&lt;0.13, robust esttab using &ldquo;D:\Max\Desktop\MSEco\Spring 2021\ECO 5349\Hansen RDD Replication\Tables\Equation 1.rtf&rdquo;, compress</p>
+</li>
+<li>
+<p>Linear and Quadratic Fits For this exercise, we will need to look at repeat offenders. These are people with nonzero values in both bac1 and bac2.</p>
+<p>gen DUI_2 = 0 replace DUI_2 = 1 if bac1&lt;0.15 gen bac1_DUI_2 = DUI_2<em>bac1 gen bac1_DUI_2_squared_2 = DUI_2</em>bac1^2 quietly cmogram recidivism bac1_DUI_2, cut(0.08) title(Figure 3. Panel A: All offenders, linear) scatter lfitci legend lineat(.08) quietly cmogram recidivism bac1_DUI_2_squared_2, cut(0.08) title(Figure 3. Panel A: All offenders, quadratic) scatter lfitci legend lineat(.08)</p>
+</li>
+<li>
+<p>Discussion This exercise was meant to give a basic understanding of coding in Stata. The hypothesis that was tested was that if people receive a DUI, they are less likely to receive another one. The results of the project demonstrate that the hypothesis is correct. Because the covariates were tested, found to be balanced, and accounted for in the final regression, a causal effect can be inferred as the only effect left unaccounted for was treatment. I am very confident in Hansen&rsquo;s conclusion. Hansen&rsquo;s paper validates years of DUI research.</p>
+</li>
+</ol>
